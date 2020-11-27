@@ -15,6 +15,13 @@ type RedisTracingHook struct {
 
 var _ redis.Hook = RedisTracingHook{}
 
+// NewHook creates a new go-redis hook instance and that will collect spans using the provided tracer.
+func NewHook(tracer opentracing.Tracer) redis.Hook {
+	return &RedisTracingHook{
+		tracer: tracer,
+	}
+}
+
 func (hook RedisTracingHook) createSpan(ctx context.Context, operationName string) (opentracing.Span, context.Context) {
 	span := opentracing.SpanFromContext(ctx)
 	if span != nil {
@@ -64,11 +71,5 @@ func recordError(ctx context.Context, errorTag string, span opentracing.Span, er
 	if err != redis.Nil {
 		span.SetTag(string(ext.Error), true)
 		span.SetTag(errorTag, err.Error())
-	}
-}
-
-func NewHook(tracer opentracing.Tracer) redis.Hook {
-	return &RedisTracingHook{
-		tracer: tracer,
 	}
 }
